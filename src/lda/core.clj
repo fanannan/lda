@@ -2,8 +2,7 @@
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]))
 
-; read a data file and returns [[id, word, word-count],...]
-(defn read-csv [input-file-path]
+(defn read-csv [input-file-path] ; read a data file and returns [[id, word, word-count],...]
   (with-open [input-file (io/reader input-file-path)]
     (doall (map (fn[[id word c]][id word (Integer/valueOf c)])
                 (rest (csv/read-csv input-file))))))
