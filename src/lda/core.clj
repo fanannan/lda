@@ -30,7 +30,7 @@
 
 (defn reassign-topic [alpha beta v k topiced-data i]
   (println (new java.util.Date) "iteration:" (inc i))
-  (into {} (map (fn[[datum topic]][datum (gibbs datum alpha beta v k topiced-data)]) topiced-data)))
+  (into {} (pmap (fn[[datum topic]][datum (gibbs datum alpha beta v k topiced-data)]) topiced-data)))
 
 (defn probabilities [k samples]
   (->> (map #(vector % (map (fn[m](get m %)) samples))(keys (first samples)))
