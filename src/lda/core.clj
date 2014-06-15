@@ -2,7 +2,7 @@
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]))
 
-; read data file and returns [[id, word, word-count],...]
+; read a data file and returns [[id, word, word-count],...]
 (defn read-csv [input-file-path]
   (with-open [input-file (io/reader input-file-path)]
     (doall (map (fn[[id word c]][id word (Integer/valueOf c)])
@@ -14,7 +14,7 @@
 (defn assign-topic [data k]
   (into {} (map #(vector % (int (* (rand) k))) data)))
 
-(defn count-words [f topiced-data] ; this consumes huge time!
+(defn count-words [f topiced-data] ; this consumes huge time! should be rewritten.
   (->> (filter (fn[[[id word _] topic]](f topic id word)) topiced-data)
        (map (fn[[[_ _ count] _]] count))(apply +)))
 
@@ -35,14 +35,12 @@
 
 (defn probabilities [k samples]
   (->> (map #(vector % (map (fn[m](get m %)) samples))(keys (first samples)))
-       (map (fn[[datum freq]]
-              [datum (map (fn[i](float (/ (count (filter #(= % i) freq)) (count samples)))) (range k))]))))
+       (map (fn[[datum freq]] [datum (map (fn[i](float (/ (count (filter #(= % i) freq)) (count samples)))) (range k))]))))
 
-(defn lda [alpha beta k iteration input-file-path]
+(defn lda [alpha beta k iteration input-file-path] ; k : number of topics
   (let [data (read-csv input-file-path)
         v (unique-words data)
-        samples (rest (reductions (fn[dt i](reassign-topic alpha beta v k dt i))
-                                  (assign-topic data k)(range iteration)))]
+        samples (rest (reductions (fn[dt i](reassign-topic alpha beta v k dt i))(assign-topic data k)(range iteration)))]
     (probabilities k samples)))
 
 (defn -main []
