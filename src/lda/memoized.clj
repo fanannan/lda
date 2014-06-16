@@ -1,6 +1,7 @@
-(ns lda.core
+(ns lda.memoized
   (:require [clojure.data.csv :as csv]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.core.memoize :as memo]))
 
 (defn read-csv [input-file-path]
 ; read a file and returns a data set (vector of datum: [[id, word, word-count],...])
@@ -19,16 +20,33 @@
 ; this consumes huge time! should be rewritten.
   (apply + (map (fn[[[id word count] topic]](if (f topic id word) count 0)) topiced-data)))
 
+(def cache-size 10000)
+
+(def count-words-td
+  (memo/fifo (fn[topic id topiced-data]
+               (count-words (fn[t d w](and (= topic t)(= id d))) topiced-data))
+             :fifo/threshold cache-size))
+
+(def count-words-wt
+  (memo/fifo (fn[topic word topiced-data]
+               (count-words (fn[t d w](and (= topic t)(= word w))) topiced-data))
+            :fifo/threshold cache-size))
+
+(def count-words-t
+  (memo/fifo (fn[topic topiced-data]
+               (count-words (fn[t d w](= topic t)) topiced-data))
+            :fifo/threshold cache-size))
+
 (defn update-probs [topic id word alpha beta v topiced-data]
 ; v: num of unique words
-  (let [n_td (dec (count-words (fn[t d w](and (= topic t)(= id d))) topiced-data)),
-        n_wt (dec (count-words (fn[t d w](and (= topic t)(= word w))) topiced-data)),
-        n_t  (dec (count-words (fn[t d w](= topic t)) topiced-data))]
+  (let [n_td (dec (count-words-td topic id topiced-data)),
+        n_wt (dec (count-words-wt topic word topiced-data)),
+        n_t  (dec (count-words-t topic topiced-data))]
     (* (+ alpha n_td) (+ beta n_wt) (/ 1 (+ (* beta v) n_t)))))
 
 (defn gibbs [[id word _] alpha beta v k topiced-data]
-; pararelly executes collapsed gibbs sampling and returns topic number.
-  (let [raw-probs (pmap #(update-probs % id word alpha beta v topiced-data) (range k))
+; executes collapsed gibbs sampling and returns topic number.
+  (let [raw-probs (map #(update-probs % id word alpha beta v topiced-data) (range k))
         cum-probs (reductions + raw-probs)]
     (count (filter #(< % (rand))(map #(/ % (last cum-probs)) cum-probs)))))
 
