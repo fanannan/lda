@@ -42,5 +42,5 @@
     (probabilities k samples)))
 
 (defn -main []
-  (clojure.pprint/pprint (lda (/ 50 5) 0.1 5 50 "./resources/in1_small.csv"))
+  (clojure.pprint/pprint (lda (/ 50 5) 0.1 5 5 "./resources/in1_small.csv"))
   (shutdown-agents))
