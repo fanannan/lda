@@ -23,18 +23,15 @@
 (def cache-size 10000)
 
 (def count-words-td
-  (memo/fifo (fn[topic id topiced-data]
-               (count-words (fn[t d w](and (= topic t)(= id d))) topiced-data))
+  (memo/fifo (fn[topic id topiced-data](count-words (fn[t d w](and (= topic t)(= id d))) topiced-data))
              :fifo/threshold cache-size))
 
 (def count-words-wt
-  (memo/fifo (fn[topic word topiced-data]
-               (count-words (fn[t d w](and (= topic t)(= word w))) topiced-data))
+  (memo/fifo (fn[topic word topiced-data](count-words (fn[t d w](and (= topic t)(= word w))) topiced-data))
             :fifo/threshold cache-size))
 
 (def count-words-t
-  (memo/fifo (fn[topic topiced-data]
-               (count-words (fn[t d w](= topic t)) topiced-data))
+  (memo/fifo (fn[topic topiced-data](count-words (fn[t d w](= topic t)) topiced-data))
             :fifo/threshold cache-size))
 
 (defn update-probs [topic id word alpha beta v topiced-data]
