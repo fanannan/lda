@@ -10,6 +10,8 @@ The structure of the input csv file: document-id, word, number-of-words-in-the-d
 
 The output: vector of [[document-id, word, number-of-words-in-the-document], collection-of-probabilities-belonging-to-the-topics]
 
+The codes on lda.memoized are almost identical to those of lda.core. lda.memoized uses clojure.core.memoized and runs a bit faster.
+
 ## License
 
 Copyright © 2014 Takahiro SAWADA
