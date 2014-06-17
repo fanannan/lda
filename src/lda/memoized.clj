@@ -17,25 +17,25 @@
   (into {} (map #(vector % (int (* (rand) k))) data)))
 
 (defn count-words [f topiced-data]
-; this consumes huge time! should be rewritten.
-  (apply + (map (fn[[[id word count] topic]](if (f topic id word) count 0)) topiced-data)))
+  (apply + (map (fn[[[id word count] topic]](if (f id word) count 0)) topiced-data)))
 
 (def cache-size 10000)
 
+(def filter-by-topic
+  (memo/fifo (fn[topic topiced-data](filter (fn[[[d w c] t]](= topic t)) topiced-data))
+             :fifo/threshold cache-size))
+
 (def count-words-td
-  (memo/fifo (fn[topic id topiced-data]
-               (count-words (fn[t d w](and (= topic t)(= id d))) topiced-data))
+  (memo/fifo (fn[topic id topiced-data](count-words (fn[d w](= id d))(filter-by-topic topic topiced-data)))
              :fifo/threshold cache-size))
 
 (def count-words-wt
-  (memo/fifo (fn[topic word topiced-data]
-               (count-words (fn[t d w](and (= topic t)(= word w))) topiced-data))
-            :fifo/threshold cache-size))
+  (memo/fifo (fn[topic word topiced-data](count-words (fn[d w](= word w))(filter-by-topic topic topiced-data)))
+             :fifo/threshold cache-size))
 
 (def count-words-t
-  (memo/fifo (fn[topic topiced-data]
-               (count-words (fn[t d w](= topic t)) topiced-data))
-            :fifo/threshold cache-size))
+  (memo/fifo (fn[topic topiced-data] (count (filter-by-topic topic topiced-data)))
+             :fifo/threshold cache-size))
 
 (defn update-probs [topic id word alpha beta v topiced-data]
 ; v: num of unique words
